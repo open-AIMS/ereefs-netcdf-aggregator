@@ -1,0 +1,8 @@
+<aspectj>
+    <aspects>
+        <aspect name="au.gov.aims.aspectj.timing.*" />
+        <weaver options="-verbose -ahowWeaveInfo">
+            <include within="au.gov.aims.aspectj.*" />
+        </weaver>
+    </aspects>
+</aspectj>

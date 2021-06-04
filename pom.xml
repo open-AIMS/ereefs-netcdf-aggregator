@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>au.gov.aims</groupId>
+    <artifactId>ereefs-ncaggregate</artifactId>
+    <name>ncAggregate</name>
+
+    <!--
+        Version of this POM only. Not used for build name. See "buildId" and "finalName" below.
+    -->
+    <version>2.0</version>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+        </license>
+    </licenses>
+
+    <properties>
+
+        <!--
+            Default value for the 'buildId' is 'SNAPSHOT'. This is overridden by passing a value on
+            the command line:
+            mvn -DbuildId="5-20191701" clean package
+        -->
+        <buildId>SNAPSHOT</buildId>
+
+        <!-- Instruct the compiler to use Java 1.8 -->
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+
+        <!-- Library versions. -->
+        <org.slf4j.version>1.7.26</org.slf4j.version>
+        <aws.java.sdk.version>1.11.608</aws.java.sdk.version>
+        <junit.version>4.12</junit.version>
+        <assertj.core.version>3.6.2</assertj.core.version>
+        <apache.commons.math3.version>3.6.1</apache.commons.math3.version>
+        <ereefs.database.version>0.6.17</ereefs.database.version>
+        <ereefs.pojo.version>1.7.1</ereefs.pojo.version>
+        <ereefs.s3wrapper.version>0.4.0</ereefs.s3wrapper.version>
+
+        <!--
+            Do not upgrade edalVersion to 1.4.1 as it causes errors when generating the
+            NetCDFMetadataBean.
+         -->
+        <edalVersion>1.2.4</edalVersion>
+        <netcdfVersion>5.2.0</netcdfVersion>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    </properties>
+
+    <packaging>jar</packaging>
+
+    <!-- Build .jar with dependencies. -->
+    <build>
+        <finalName>${project.artifactId}-${buildId}</finalName>
+        <plugins>
+
+            <!-- Turn on linting during compile. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Xlint</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>aims.ereefs.netcdf.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>assemble-all</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Code coverage. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <!-- attached to Maven test phase -->
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.9.1</version>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <reporting>
+        <plugins>
+
+            <!-- Javadoc generation. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+                <configuration>
+                    <show>public</show>
+                </configuration>
+            </plugin>
+
+            <!-- Code coverage report. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <!-- select non-aggregate reports -->
+                            <report>report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+            <!-- Dependency information -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>3.1.2</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>dependencies</report>
+                            <report>team</report>
+                            <report>mailing-lists</report>
+                            <report>ci-management</report>
+                            <report>issue-management</report>
+                            <report>licenses</report>
+                            <report>scm</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+        </plugins>
+    </reporting>
+
+    <dependencies>
+
+        <!-- Binding JSON to POJO. -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20190722</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.9.9.3</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Logging. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.30</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.30</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Testing. -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.core.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Apache libraries. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>${apache.commons.math3.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- S3Wrapper - This package has a LOT of dependencies (because of AWS API) -->
+        <dependency>
+            <groupId>au.gov.aims</groupId>
+            <artifactId>s3wrapper</artifactId>
+            <version>${ereefs.s3wrapper.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Uber eReefs library. -->
+        <dependency>
+            <groupId>au.gov.aims</groupId>
+            <artifactId>ereefs-database</artifactId>
+            <version>${ereefs.database.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.mongodb</groupId>
+                    <artifactId>mongo-java-driver</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- POJO/database layer. -->
+        <dependency>
+            <groupId>au.gov.aims</groupId>
+            <artifactId>ereefs-pojo</artifactId>
+            <version>${ereefs.pojo.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>3.11.0</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- NetCDF file access. -->
+        <dependency>
+            <groupId>edu.ucar</groupId>
+            <artifactId>cdm-core</artifactId>
+            <version>${netcdfVersion}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.sis.core</groupId>
+            <artifactId>sis-referencing</artifactId>
+            <version>1.0</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.geotoolkit</groupId>
+            <artifactId>geotk-referencing</artifactId>
+            <version>3.20-geoapi-3.0</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Prometheus APM -->
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient</artifactId>
+            <version>0.8.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_hotspot</artifactId>
+            <version>0.8.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_httpserver</artifactId>
+            <version>0.8.0</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_pushgateway</artifactId>
+            <version>0.8.0</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>au.gov.aims</groupId>
+            <artifactId>netcdf-generator</artifactId>
+            <version>0.1</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- Non-standard repositories to search in. -->
+    <repositories>
+
+        <!-- Central repository -->
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+
+        <!-- Maven repo on Open-AIMS for public packages. -->
+        <repository>
+            <id>github_openaims</id>
+            <name>GitHub Open-AIMS repo</name>
+            <url>https://maven.pkg.github.com/open-AIMS/*</url>
+        </repository>
+
+        <repository>
+            <id>aims-ks.mvn-repo</id>
+            <name>AIMS Knowledge System MVN Repo</name>
+            <url>https://github.com/aims-ks/mvn-repo/raw/master/</url>
+        </repository>
+
+        <repository>
+            <id>unidata-all</id>
+            <name>Unidata All</name>
+            <url>https://artifacts.unidata.ucar.edu/repository/unidata-all/</url>
+        </repository>
+
+    </repositories>
+
+</project>

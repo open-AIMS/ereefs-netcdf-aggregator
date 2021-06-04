@@ -1,0 +1,139 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description:
+  AWS CloudFormation Template for the eReefs ncAggregate component.
+
+Parameters:
+
+  DeployTarget:
+    Type: String
+    Default: "test"
+    Description: >
+      The name of the account being deployed to. This is used to find settings specific to an environment (eg:
+      "test" vs "prod").
+
+  Environment:
+    Type: String
+    Default: "test"
+    Description: >
+      A unique name for the environment within the target account. This could be generic, such as "test" or "prod",
+      or it could be specific to a developer, such as "asmith".
+
+  EcrUserId:
+    Type: String
+    Default: "jenkins-ereefs-test-job_planner"
+    Description: >
+      The id of the user that will push Docker images to the AWS ECR.
+
+Mappings:
+
+  FileCacheMappings:
+    prod:
+      maxSize: 40   # 40 GB.
+    test:
+      maxSize: 40   # 40 GB.
+
+
+Resources:
+
+  JobDefinitionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName:  s3Policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetBucketAcl
+                  - s3:GetObject
+                  - s3:GetObjectAcl
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:ListBucket
+                Resource:
+                  - Fn::ImportValue: !Sub "definitions-s3-${Environment}-PrivateBucket"
+                  - !Sub
+                    - "${BucketName}/*"
+                    - BucketName:
+                        Fn::ImportValue:
+                          Fn::Sub: "definitions-s3-${Environment}-PrivateBucket"
+                  - Fn::ImportValue: !Sub "definitions-s3-${Environment}-PublicBucket"
+                  - !Sub
+                    - "${BucketName}/*"
+                    - BucketName:
+                        Fn::ImportValue:
+                          Fn::Sub: "definitions-s3-${Environment}-PublicBucket"
+        - PolicyName:  ssmPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Environment}/global/mongodb*'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Environment}/ncAggregate/*'
+
+  JobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      Type: container
+      JobDefinitionName: !Sub 'ereefs-ncaggregate-${Environment}'
+      ContainerProperties:
+        Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/ereefs-ncaggregate-${Environment}'
+        JobRoleArn: !Ref JobDefinitionRole
+        Vcpus: 1
+        Memory: 7500
+        Environment:
+          -
+            Name: 'AWS_REGION'
+            Value: !Sub '${AWS::Region}'
+          -
+            Name: 'EXECUTION_ENVIRONMENT'
+            Value: !Ref Environment
+          -
+            Name: 'PROMETHEUS_PUSH_GATEWAY_URL'
+            Value: '$HOSTNAME'
+          -
+            Name: 'MAX_FILE_CACHE_SIZE_GB'
+            Value: !FindInMap
+              - FileCacheMappings
+              - !Ref DeployTarget
+              - maxSize
+
+  # Add a parameter to the ParameterStore linking this JobDefinition to ncAggregate tasks.
+  JobDefinitionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: !Sub "Link Job Definition to ncAggregate for ${Environment}."
+      Name: !Sub "/${Environment}/global/task/batchConfig/jobDefinition/ncaggregate"
+      Type: String
+      Value: !Ref JobDefinition
+
+  ElasticContainerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub 'ereefs-ncaggregate-${Environment}'
+      RepositoryPolicyText:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowPush
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:user/${EcrUserId}'
+            Action:
+              - 'ecr:PutImage'
+              - 'ecr:InitiateLayerUpload'
+              - 'ecr:UploadLayerPart'
+              - 'ecr:CompleteLayerUpload'

@@ -1,0 +1,5 @@
+#
+# Extend the Maven Docker image to include the NetCDF library.
+
+FROM maven:3-jdk-8-slim
+RUN apt-get update && apt-get install -y libnetcdf-c++4
