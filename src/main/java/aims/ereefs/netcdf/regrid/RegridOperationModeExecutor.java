@@ -15,6 +15,8 @@ import au.gov.aims.ereefs.pojo.definition.product.ProductDefinition;
 import au.gov.aims.ereefs.pojo.metadata.MetadataDao;
 import au.gov.aims.ereefs.pojo.metadata.MetadataDaoFileImpl;
 import au.gov.aims.ereefs.pojo.task.NcAggregateTask;
+import au.gov.aims.ereefs.pojo.task.TaskDao;
+import au.gov.aims.ereefs.pojo.task.TaskDaoFileImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -73,7 +75,7 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
         String inputPath = null;
         String outputPath = null;
         String cacheFilename = null;
-        String[] specifiedVariableNames = null;
+        String[] specifiedVariableNames = new String[0];
         double tempResolution = DEFAULT_RESOLUTION;
         for (final String arg : args) {
 
@@ -102,9 +104,14 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
             throw new RuntimeException("Input path not specified. Use \"--input=<input path>\"");
         }
         logger.debug("\"inputPath\" : " + inputPath);
-        final String INPUT_ID = inputPath;
+        final String INPUT_ID = inputPath.endsWith(File.separator) ?
+                inputPath :
+                inputPath + File.separator;
         if (outputPath == null) {
             throw new RuntimeException("Output path not specified. Use \"--output=<output path>\"");
+        }
+        if (!outputPath.endsWith(File.separator)) {
+            outputPath = outputPath + File.separator;
         }
         logger.debug("\"outputPath\" : " + outputPath);
         if (cacheFilename == null) {
@@ -114,7 +121,7 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
         }
         final double resolution = tempResolution;
         logger.debug("\"resolution\" : " + resolution);
-        if (specifiedVariableNames != null) {
+        if (specifiedVariableNames.length > 0) {
             logger.debug("variables: " +
                 Arrays.stream(specifiedVariableNames).collect(Collectors.joining(",")));
         }
@@ -135,13 +142,13 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
         // Instantiate a MetadataDao which will be progressively populated with the metadata of the
         // files being processed.
         String tempDir = TempDirectoryInitialiser.initialise();
-        final MetadataDao metadataDao = new MetadataDaoFileImpl(tempDir);
+        final String daoPath = tempDir + "dao" + File.separator;
+        final MetadataDao metadataDao = new MetadataDaoFileImpl(daoPath + "metadata");
+        final TaskDao taskDao = new TaskDaoFileImpl(daoPath + "task");
 
         // Process each file.
         for (File file : files) {
-            logger.debug(file.getAbsolutePath());
-            final String DATASET_ID = file.getName();
-            final String METADATA_ID = PRODUCT_DEFINITION_ID + "/" + DATASET_ID;
+            logger.debug("Regridding file: " + file.getAbsolutePath());
             final String outputFilename = "file:" + outputPath + "regridded-" + file.getName();
 
             // Open the NetCDF dataset.
@@ -178,18 +185,19 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
             NetCDFMetadataBean netcdfMetadataBean = null;
             try {
                 netcdfMetadataBean = NetCDFMetadataBean.create(
-                    PRODUCT_DEFINITION_ID,
-                    DATASET_ID,
+                    "input",
+                    file.getName(),
                     new URI("file:" + file.getAbsolutePath()),
                     new File(file.getAbsolutePath()),
                     DateTime.now().getMillis(),
-                    false
+                    true
                 );
             } catch (URISyntaxException e) {
                 throw new RuntimeException(
                     "Failed to build URI of input file \"" + file.getName() + "\".", e);
             }
-            logger.debug("metadataId: " + netcdfMetadataBean.getId());
+            final String metadataId = netcdfMetadataBean.getId();
+            logger.debug("metadataId: " + metadataId);
             metadataDao.persist(netcdfMetadataBean.toJSON());
 
             // Find the variable with the most time values.
@@ -237,7 +245,7 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
                                     new ArrayList<NcAggregateTask.FileIndexBounds>() {{
                                         add(
                                             new NcAggregateTask.FileIndexBounds(
-                                                METADATA_ID,
+                                                metadataId,
                                                 finalIndex,
                                                 finalIndex
                                             )
@@ -250,8 +258,8 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
                 );
             }
 
-            // Calculate the timeIncrement value.
-            String timeIncrement = null;
+            // Calculate the timeIncrement value. Default is "daily".
+            String timeIncrement = "daily";
             if (variableTimeValues.size() > 1) {
                 final long timeDiff = variableTimeValues.get(1).getMillis() -
                     variableTimeValues.get(0).getMillis();
@@ -261,9 +269,6 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
                 if (timeDiff == 24 * 60 * 60 * 1000) {
                     timeIncrement = "daily";
                 }
-            }
-            if (timeIncrement == null) {
-                throw new RuntimeException("Unable to calculate the time increments for the file.");
             }
 
             // Calculate the file duration value.
@@ -275,15 +280,27 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
             }
 
             // Build the Product definition. Note that the variables referenced are NOT of type
-            // CoordinateAxis, which are the four (4) dimensions. They will be handled separately.
+            // CoordinateAxis, which are the four (4) dimensions and will be handled separately.
             String[] finalSpecifiedVariableNames = specifiedVariableNames;
             final String[] variableNames =
+
+                // Start with all variables in the input dataset.
                 inputDataset.getVariables()
                     .stream()
+
+                    // Ignore the variables for the dimensions.
                     .filter(variable -> !(variable instanceof CoordinateAxis))
+
+                    // Ensure the variable has a time dimension.
                     .filter(variable -> variable.findDimensionIndex("time") != -1)
+
+                    // Consider only the fullname of the variable.
                     .map(variable -> variable.getFullName())
-                    .filter(variableName -> Arrays.stream(finalSpecifiedVariableNames)
+
+                    // If variables were specified via command-line, only include those variables,
+                    // otherwise include all variables that have not been filtered previously.
+                    .filter(variableName -> finalSpecifiedVariableNames.length == 0 ||
+                            Arrays.stream(finalSpecifiedVariableNames)
                         .filter(specifiedVariableName -> specifiedVariableName.equalsIgnoreCase(variableName))
                         .findFirst()
                         .isPresent()
@@ -357,15 +374,17 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
             NcAggregateTask task = new NcAggregateTask(
                 "jobId",
                 PRODUCT_DEFINITION_ID,
-                file.getAbsolutePath(),
+                "regridded/" + file.getName(),
                 outputFilename,
                 timeInstants);
+            taskDao.persist(task);
 
             // Instantiate the ApplicationContext.
             final ApplicationContext applicationContext = new ApplicationContext("regrid");
             applicationContext.setTask(task);
             applicationContext.setProductDefinition(productDefinition);
             applicationContext.setMetadataDao(metadataDao);
+            applicationContext.setTaskDao(taskDao);
             applicationContext.setTempPathname(tempDir);
             ApplicationContextBuilder.populateApplicationContext(
                 applicationContext,

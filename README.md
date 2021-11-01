@@ -130,6 +130,10 @@ Package the **ncAggregate** code and dependencies as a **JAR** file using the fo
 $ <project root>/env/dev/maven-package.sh
 ```
 
+**WARNING:** Maven requires access to packages hosted on Github. Unfortunately Github requires 
+credentials even though the projects are public. You will need to set the GITHUB_USERNAME and 
+GITHUB_TOKEN environment variables before executing `maven-package.sh`.
+
 To run **ncAggregate** as a Java application against a file-based database at `/data/ereefs/filedb`:
 ```shell script
 $ <project root>/env/dev/java-run-filedb.sh

@@ -36,8 +36,7 @@ public class DatasetMetadataIdsByInputIdBuilder {
 
             // The Id of the unique input source, either another Product, or a Download source.
             final String inputId = inputDefn.getId();
-            inputIdToDatasetMetadataIds.put(inputId, new ArrayList<>());
-            final List<String> metadataIds = inputIdToDatasetMetadataIds.get(inputId);
+            final List<String> metadataIds = new ArrayList<>();
 
             // Loop through all TimeInstants for the Task, as each TimeInstant contains a list of
             // MetadataIds that provide data for that TimeInstant.
@@ -61,6 +60,11 @@ public class DatasetMetadataIdsByInputIdBuilder {
                         }
                     }
                 }
+            }
+
+            // Only add the InputId if there are MetadataIds to bind to it.
+            if (metadataIds.size() > 0) {
+                inputIdToDatasetMetadataIds.put(inputId, metadataIds);
             }
         }
 
