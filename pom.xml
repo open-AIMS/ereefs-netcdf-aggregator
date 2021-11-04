@@ -39,8 +39,8 @@
         <junit.version>4.12</junit.version>
         <assertj.core.version>3.6.2</assertj.core.version>
         <apache.commons.math3.version>3.6.1</apache.commons.math3.version>
-        <ereefs.database.version>0.6.17</ereefs.database.version>
-        <ereefs.pojo.version>1.7.1</ereefs.pojo.version>
+        <ereefs.database.version>0.6.18</ereefs.database.version>
+        <ereefs.pojo.version>1.7.2</ereefs.pojo.version>
         <ereefs.s3wrapper.version>0.4.0</ereefs.s3wrapper.version>
 
         <!--

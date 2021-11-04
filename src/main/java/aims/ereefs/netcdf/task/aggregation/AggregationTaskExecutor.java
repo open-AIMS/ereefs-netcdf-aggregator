@@ -101,7 +101,9 @@ public class AggregationTaskExecutor implements TaskExecutor {
         // object includes an information value object.
         final String outputDatasetLocalFilename = applicationContext.getTempPathname() +
             task.getId() + "-output.nc";
-        final String outputDatasetRemoteUrl = task.getBaseUrl() + ".nc";
+        final String outputDatasetRemoteUrl = task.getBaseUrl().toLowerCase().endsWith(".nc") ?
+                task.getBaseUrl() :
+                task.getBaseUrl() + ".nc";
         OutputDataset outputDataset = null;
         if (productDefinition.getOutputs().getNetcdfOutputFile() != null) {
             outputDataset = OutputDatasetBuilder.build(
