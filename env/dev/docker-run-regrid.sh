@@ -19,4 +19,9 @@ docker run \
     --memory=7.5GB \
     -v `pwd`:/data/ \
     --env EXECUTION_ENVIRONMENT=regrid \
-    ereefs-ncaggregate --regrid --input=/data/orig --output=/data/out --cache=/data/regrid-mapper.dat
+    --env DB_TYPE=file \
+    --env DB_PATH=/data/db \
+    ereefs-ncaggregate --regrid --input=/data/orig/ --output=/data/out/ --cache=/data/regrid-mapper.dat
+
+# Specifying variables is also supported. For example:
+#    ereefs-ncaggregate --regrid --input=/data/orig --output=/data/out --cache=/data/regrid-mapper.dat --variables=temp,salt

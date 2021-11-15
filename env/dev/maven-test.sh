@@ -18,14 +18,6 @@ SCRIPT_PATH=$(dirname "${SCRIPT}")
 # Identify the project root directory based on the location of this script.
 PROJECT_ROOT=$(readlink --canonicalize "${SCRIPT_PATH}/../..")
 
-# Load the environment properties.
-ENV_FILE=${SCRIPT_PATH}/set-env.sh
-if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "${ENV_FILE} is missing. Refer to project README.md"
-  exit 1
-fi
-source ${ENV_FILE}
-
 # Ensure the ${HOME}/.m2 directory belongs to the current user.
 mkdir -p ${HOME}/.m2
 
@@ -46,4 +38,4 @@ docker run \
     -v ${PROJECT_ROOT}:/workdir \
     -w /workdir \
     ${IMAGE_NAME} \
-    mvn --settings maven-settings.xml -Duser.home="/tmp/maven" -DGITHUB_USERNAME=${GITHUB_USERNAME} -DGITHUB_TOKEN=${GITHUB_TOKEN} clean test $1
+    mvn -Duser.home="/tmp/maven" clean test $1
