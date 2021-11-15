@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * {@link OperationModeExecutor} implementation for regridding.
+ * {@link OperationModeExecutor} implementation for regridding NetCDF files from the command-line.
  *
  * @author Aaron Smith
  */
@@ -140,7 +140,8 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
         logger.debug("\"" + inputPath + "\" has " + files.length + " files.");
 
         // Instantiate a MetadataDao which will be progressively populated with the metadata of the
-        // files being processed.
+        // files being processed. Note that we use a file-based implementation because ncAggregate
+        // is running stand-alone.
         String tempDir = TempDirectoryInitialiser.initialise();
         final String daoPath = tempDir + "dao" + File.separator;
         final MetadataDao metadataDao = new MetadataDaoFileImpl(daoPath + "metadata");
@@ -181,7 +182,7 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
                 false
             );
 
-            // Generate the Metadata for the file.
+            // Generate the Metadata for the file and persist it to the database.
             NetCDFMetadataBean netcdfMetadataBean = null;
             try {
                 netcdfMetadataBean = NetCDFMetadataBean.create(
@@ -200,7 +201,8 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
             logger.debug("metadataId: " + metadataId);
             metadataDao.persist(netcdfMetadataBean.toJSON());
 
-            // Find the variable with the most time values.
+            // Find the variable with the most time values. These will be used as the time values
+            // for the file.
             VariableMetadataBean referenceVariable = null;
             int referenceVariableTimeValuesSize = 0;
             for (final String variableName : netcdfMetadataBean.getVariableMetadataBeanMap().keySet()) {
@@ -224,6 +226,9 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
             if (variableTimeValues == null || variableTimeValues.size() == 0) {
                 throw new RuntimeException("No time values found in \"" + file.getName() + "\".");
             }
+
+            // Build a list of TimeInstant objects which are part of the Task defining the work to
+            // be done. Each time instant represents a single value from the time variable.
             List<NcAggregateTask.TimeInstant> timeInstants = new ArrayList<>();
             for (int index = 0; index < variableTimeValues.size(); index++) {
                 final DateTime dateTime = variableTimeValues.get(index);
@@ -258,7 +263,8 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
                 );
             }
 
-            // Calculate the timeIncrement value. Default is "daily".
+            // Determine the timeIncrement unit. Default is "daily". This is used when populating
+            // the ProductDefinition we will build shortly.
             String timeIncrement = "daily";
             if (variableTimeValues.size() > 1) {
                 final long timeDiff = variableTimeValues.get(1).getMillis() -
@@ -271,7 +277,8 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
                 }
             }
 
-            // Calculate the file duration value.
+            // Determine the file duration. Default is "monthly". This is used when populating the
+            // ProductDefinition we will build shortly.
             String fileDuration = "monthly";
             final long timeDiff = variableTimeValues.get(variableTimeValues.size() - 1).getMillis() -
                 variableTimeValues.get(0).getMillis();
@@ -379,7 +386,8 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
                 timeInstants);
             taskDao.persist(task);
 
-            // Instantiate the ApplicationContext.
+            // Build an ApplicationContext which can be passed to the executor for app-level
+            // references.
             final ApplicationContext applicationContext = new ApplicationContext("regrid");
             applicationContext.setTask(task);
             applicationContext.setProductDefinition(productDefinition);
@@ -392,7 +400,9 @@ public class RegridOperationModeExecutor implements OperationModeExecutor {
                 productDefinition
             );
 
-            // Process the files.
+            // Execute the aggregator on the file. Aggregation will not be performed because of
+            // settings we made in the ProductDefinition, but the aggregator will perform regridding
+            // on the file.
             AggregationTaskExecutor aggregationTaskExecutor = new AggregationTaskExecutor();
             aggregationTaskExecutor.execute(task, applicationContext);
         }

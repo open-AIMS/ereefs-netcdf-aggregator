@@ -66,9 +66,6 @@ public class DatasetUtils {
 
     /**
      * for a given input variable tell me the dimensions of the corresponding output variable
-     *
-     * @param inputVariable
-     * @return
      */
     static public List<Dimension> findOutputDimensionsByInputVariableName(
         Variable inputVariable,

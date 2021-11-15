@@ -12,7 +12,12 @@ import java.util.Date;
 import java.util.TimeZone;
 
 /**
- * Main class invoked when the tool is launched.
+ * This is entry point of the application. ncAggregate can perform a number of related actions based
+ * on implementations of the {@link OperationModeExecutor} interface.
+ *
+ * @see AggregationOperationModeExecutor
+ * @see RegridOperationModeExecutor
+ * @see PopulateMetadataOperationModeExecutor
  *
  * @author Greg Coleman
  * @author Aaron Smith
@@ -35,12 +40,14 @@ public class Main {
         try {
 
             // Wrap all processing for metrics monitoring, so that all metrics are pushed before
-            // exit.
+            // exit. Metrics are pushed via a Thread so processing is not adversely impacted.
             MetricsPushThread metricsPushThread = MetricsPushThreadFactory.make();
             try {
 
-                // Handle the operation modes supported by the application. Note that the
-                // AggregationOperationModeExecutor is added last as it is the default handler.
+                // Handle the operation modes supported by the application. Each
+                // OperationModeExecutor implementation is given the opportunity to handle the
+                // execution, so the AggregationOperationModeExecutor is added last as it is the
+                // default handler and accepts any executions that are offered.
                 final OperationModeExecutor[] executors = new OperationModeExecutor[]{
                     new PopulateMetadataOperationModeExecutor(),
                     new RegridOperationModeExecutor(),
@@ -70,9 +77,13 @@ public class Main {
 
         } catch (TerminatingException e) {
             logger.error("Processing terminated.");
+
+            // Exit with a non-zero value to signify processing was terminated on error.
             System.exit(1);
         } catch (Exception e) {
             logger.error("Processing failed.", e);
+
+            // Exit with a non-zero value to signify processing was terminated on error.
             System.exit(1);
         }
         logger.debug("Application exited normally.");

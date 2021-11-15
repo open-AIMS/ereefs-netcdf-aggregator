@@ -40,8 +40,6 @@ public class ArrayUtils {
 
     /**
      * Package the NetCdf {@code Array} as a Java {@code Double Array}.
-     *
-     * @return
      */
     static public Double[] asJavaDoubleArray(Array input) {
         int size = (int) input.getSize();
