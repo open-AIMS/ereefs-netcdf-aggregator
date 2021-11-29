@@ -61,9 +61,9 @@ public class MetricsPushThread extends Thread {
                 logger.debug("Push complete.");
             } catch (Exception e) {
                 if (this.lastException == null || !this.lastException.getClass().equals(e.getClass())) {
-                    logger.error("Failed to push to PushGateway.", e);
+                    logger.warn("Failed to push to PushGateway.", e);
                 } else {
-                    logger.error("Failed to push to PushGateway: \"" + e.getClass().getName() + ": " + e.getMessage() + "\"");
+                    logger.warn("Failed to push to PushGateway: \"" + e.getClass().getName() + ": " + e.getMessage() + "\"");
                 }
                 this.lastException = e;
             }
