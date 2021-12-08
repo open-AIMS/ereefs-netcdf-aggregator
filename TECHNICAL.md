@@ -44,3 +44,5 @@ classes borrow from the Zone-based summary logic (see
 ### Metadata Population
 This was added as a means to populate the development environment without needing to run the
 DownloadManager component of the AIMS eReefs Platform.
+- [PopulateMetadataOperationModeExecutor](src/main/java/aims/ereefs/netcdf/metadata/populate/PopulateMetadataOperationModeExecutor.java) -
+  coordinating class for populating the database with metadata.
