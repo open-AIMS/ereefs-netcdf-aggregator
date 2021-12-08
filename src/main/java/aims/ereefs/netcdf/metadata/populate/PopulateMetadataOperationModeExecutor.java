@@ -14,8 +14,8 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 
 /**
- * {@link OperationModeExecutor} implementation for populating the database with the
- * {@code Metadata} for the specified NetCDF files.
+ * Implements the {@link OperationModeExecutor} interface for populating the database with the
+ * {@code Metadata} of specified NetCDF files from the command-line.
  *
  * @author Aaron Smith
  */
@@ -80,6 +80,8 @@ public class PopulateMetadataOperationModeExecutor implements OperationModeExecu
             logger.debug(file.getAbsolutePath());
             String uriStr = "file:" + file.getPath().replace("\\", "/");
             try {
+
+                // Use the library to populate the Metadata object.
                 NetCDFMetadataBean metadata = NetCDFMetadataBean.create(
                     definitionId,
                     file.getName(),
@@ -87,6 +89,8 @@ public class PopulateMetadataOperationModeExecutor implements OperationModeExecu
                     file,
                     DateTime.now().getMillis()
                 );
+
+                // Persist the Metadata object.
                 applicationContext.getMetadataDao().persist(metadata.toJSON());
             } catch (URISyntaxException e) {
                 e.printStackTrace();
