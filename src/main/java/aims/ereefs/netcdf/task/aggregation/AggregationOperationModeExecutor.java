@@ -10,8 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link OperationModeExecutor} implementation for the default operation of the application, namely
- * {@code Aggregation}.
+ * {@link OperationModeExecutor} implementation for the default aggregation operation of the application.
  *
  * @author Aaron Smith
  */
@@ -19,14 +18,18 @@ public class AggregationOperationModeExecutor implements OperationModeExecutor {
 
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Define the metric to be reported to Prometheus.
+     */
     protected static final Gauge apmUp = Gauge.build()
-        .name("ncaggregate_up")
-        .help("Records when/if the instance is up.")
-        .labelNames("task_id")
-        .register();
+            .name("ncaggregate_up")
+            .help("Records when/if the instance is up.")
+            .labelNames("task_id")
+            .register();
 
     /**
-     * Always returns {@code true}.
+     * Always returns {@code true}. If a previous{@link OperationModeExecutor} does not handle the
+     * request first, this implementation will.
      */
     @Override
     public boolean supports(String[] args) {
@@ -41,21 +44,25 @@ public class AggregationOperationModeExecutor implements OperationModeExecutor {
 
         logger.debug("Executing");
 
-        // Build the ApplicationContext, containing references to properties, helpers and utilities
-        // that are static throughout the entire life of the application, but need to be accessed
-        // by multiple parts of the application.
+        // Build the ApplicationContext, populated with references to properties, helpers and
+        // utilities that are immutable throughout the life of the application. Note that this
+        // process pulls some parameters from the execution environment.
         final ApplicationContext applicationContext = ApplicationContextBuilder.build();
 
+        // Get the Task that was loaded from the database during the build of the
+        // ApplicationContext. The Task instructs precisely what needs to be done.
         Task task = applicationContext.getTask();
 
         // Wrap all processing to make sure the DB connection is closed, and that the metrics
-        // monitoring registers up and down.
+        // monitoring registers "start" and "finish".
         try {
 
-            // Register the start of the app with the metrics monitoring system.
+            // Register the start of execution with the metrics monitoring system.
             apmUp.labels(task.getId()).set(1);
 
-            // Offer the Task to all registered TaskExecutor implementations.
+            // Offer the Task to all registered TaskExecutor implementations. This is a level of
+            // abstraction that is currently not necessary as there is only one (1) TaskExecutor
+            // implementation.
             TaskExecutor aggregationTaskExecutor = new AggregationTaskExecutor();
             if (aggregationTaskExecutor.supports(task)) {
                 aggregationTaskExecutor.execute(task, applicationContext);
@@ -65,9 +72,11 @@ public class AggregationOperationModeExecutor implements OperationModeExecutor {
 
         } finally {
 
-            // Register the end of the app with the metrics monitoring system.
+            // Register the end of execution with the metrics monitoring system.
             apmUp.labels(task.getId()).set(0);
 
+            // Close the connection to the database. This is handled inconsistently across the
+            // application and should be refactored.
             if (applicationContext.getMongoClient() != null) {
                 applicationContext.getMongoClient().close();
             }

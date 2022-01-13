@@ -39,9 +39,9 @@
         <junit.version>4.12</junit.version>
         <assertj.core.version>3.6.2</assertj.core.version>
         <apache.commons.math3.version>3.6.1</apache.commons.math3.version>
-        <ereefs.database.version>0.6.18</ereefs.database.version>
-        <ereefs.pojo.version>1.7.2</ereefs.pojo.version>
-        <ereefs.s3wrapper.version>0.4.0</ereefs.s3wrapper.version>
+        <ereefs.database.version>0.6.19</ereefs.database.version>
+        <ereefs.pojo.version>1.7.3</ereefs.pojo.version>
+        <ereefs.s3wrapper.version>0.4.1</ereefs.s3wrapper.version>
 
         <!--
             Do not upgrade edalVersion to 1.4.1 as it causes errors when generating the
@@ -126,21 +126,30 @@
                 <version>3.9.1</version>
             </plugin>
 
-        </plugins>
-    </build>
-
-    <reporting>
-        <plugins>
-
             <!-- Javadoc generation. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>3.3.1</version>
                 <configuration>
-                    <show>public</show>
+                    <doclint>all,-missing</doclint> <!-- Turn off all checks -->
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
+
+        </plugins>
+
+    </build>
+
+    <reporting>
+        <plugins>
 
             <!-- Code coverage report. -->
             <plugin>
@@ -213,6 +222,12 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.30</version>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Testing. -->
@@ -326,7 +341,7 @@
         <dependency>
             <groupId>au.gov.aims</groupId>
             <artifactId>netcdf-generator</artifactId>
-            <version>0.2</version>
+            <version>0.3</version>
             <scope>test</scope>
         </dependency>
 
@@ -347,6 +362,12 @@
             <id>github_openaims</id>
             <name>GitHub Open-AIMS repo</name>
             <url>https://maven.pkg.github.com/open-AIMS/*</url>
+        </repository>
+        <!-- Maven repo on AIMS-KS for public packages. -->
+        <repository>
+            <id>github_aimsks</id>
+            <name>GitHub AIMS-KS repo</name>
+            <url>https://maven.pkg.github.com/aims-ks/*</url>
         </repository>
 
         <repository>
