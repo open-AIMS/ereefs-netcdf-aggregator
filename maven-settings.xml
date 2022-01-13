@@ -15,5 +15,11 @@
             <username>${GITHUB_USERNAME}</username>
             <password>${GITHUB_TOKEN}</password>
         </server>
+        <!-- Resolve AIMS-KS dependencies when running tests or building the package -->
+        <server>
+            <id>github_aimsks</id>
+            <username>${env.GITHUB_USERNAME}</username>
+            <password>${env.GITHUB_TOKEN}</password>
+        </server>
     </servers>
 </settings>
