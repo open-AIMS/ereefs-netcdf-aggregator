@@ -34,7 +34,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
 
         <!-- Library versions. -->
-        <org.slf4j.version>1.7.26</org.slf4j.version>
+        <org.slf4j.version>1.7.36</org.slf4j.version>
         <aws.java.sdk.version>1.11.608</aws.java.sdk.version>
         <junit.version>4.12</junit.version>
         <assertj.core.version>3.6.2</assertj.core.version>
@@ -65,7 +65,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
+                <version>3.10.1</version>
                 <configuration>
                     <compilerArgs>
                         <arg>-Xlint</arg>
@@ -214,13 +214,13 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.30</version>
+            <version>${org.slf4j.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.30</version>
+            <version>${org.slf4j.version}</version>
             <scope>runtime</scope>
             <exclusions>
                 <exclusion>
