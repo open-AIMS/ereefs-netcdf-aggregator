@@ -206,7 +206,7 @@ abstract public class AbstractAccumulationStageTest {
             pipelineContext.setTimeInstant(timeInstant);
 
             // There should be only a single Input in the TimeInstant.
-            pipelineContext.setInput(timeInstant.getInputs().get(0));
+            pipelineContext.setInputs(timeInstant.getInputs());
 
             // Choose the SummaryOperator for MEAN temp_hour.
             final NcAggregateProductDefinition.SummaryOperator summaryOperator =

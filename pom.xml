@@ -40,7 +40,7 @@
         <assertj.core.version>3.6.2</assertj.core.version>
         <apache.commons.math3.version>3.6.1</apache.commons.math3.version>
         <ereefs.database.version>0.6.19</ereefs.database.version>
-        <ereefs.pojo.version>1.7.4</ereefs.pojo.version>
+        <ereefs.pojo.version>1.7.5</ereefs.pojo.version>
         <ereefs.s3wrapper.version>0.4.1</ereefs.s3wrapper.version>
 
         <!--
