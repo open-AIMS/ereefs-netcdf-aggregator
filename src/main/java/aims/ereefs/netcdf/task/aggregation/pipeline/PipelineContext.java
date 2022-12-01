@@ -4,12 +4,14 @@ import aims.ereefs.netcdf.output.summary.OutputWriter;
 import au.gov.aims.ereefs.pojo.definition.product.NcAggregateProductDefinition;
 import au.gov.aims.ereefs.pojo.task.NcAggregateTask;
 
+import java.util.List;
+
 /**
  * Value object caching the current operational context of the {@code Pipeline}.
  */
 public class PipelineContext {
 
-    protected NcAggregateTask.Input input;
+    protected List<NcAggregateTask.Input> inputs;
 
     protected NcAggregateProductDefinition productDefinition;
 
@@ -21,9 +23,7 @@ public class PipelineContext {
 
     protected int timeInstantIndex;
 
-    public NcAggregateTask.Input getInput() {
-        return this.input;
-    }
+    public List<NcAggregateTask.Input> getInputs() { return this.inputs; }
 
     public NcAggregateProductDefinition getProductDefinition() {
         return this.productDefinition;
@@ -45,8 +45,8 @@ public class PipelineContext {
         return this.timeInstantIndex;
     }
 
-    public void setInput(NcAggregateTask.Input input) {
-        this.input = input;
+    public void setInputs(List<NcAggregateTask.Input> inputs) {
+        this.inputs = inputs;
     }
 
     public void setSummaryOperator(NcAggregateProductDefinition.SummaryOperator summaryOperator) {
