@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -26,7 +25,7 @@ public class InputIteratorStage extends BaseStage {
      * {@link PipelineContext#timeInstant TimeInstant}. Where the {@code Input} contains data for
      * the current {@link PipelineContext#summaryOperator}, invoke subsequent {@code Stages} (see
      * {@link #nextStage}) for the {@code Input}, setting
-     * {@link PipelineContext#input} accordingly to specify the operational context.
+     * {@link PipelineContext#inputs} accordingly to specify the operational context.
      */
     public void execute() {
         final NcAggregateTask.TimeInstant timeInstant = pipelineContext.getTimeInstant();
