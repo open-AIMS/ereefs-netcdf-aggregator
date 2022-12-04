@@ -34,6 +34,7 @@ public class PipelineFactoryFactory {
         add(new SpeedMeanOperatorFactory());
         add(new SumOperatorFactory());
         add(new ThresholdExceedancePipelineFactory());
+        add(new DifferenceOperatorFactory());
     }};
 
     /**
