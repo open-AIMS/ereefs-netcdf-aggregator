@@ -92,8 +92,8 @@ Resources:
       ContainerProperties:
         Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/ereefs-ncaggregate-${Environment}'
         JobRoleArn: !Ref JobDefinitionRole
-        Vcpus: 2
-        Memory: 15000
+        Vcpus: 1
+        Memory: 7500
         Environment:
           -
             Name: 'AWS_REGION'
