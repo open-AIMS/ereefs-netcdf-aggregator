@@ -2,8 +2,6 @@ package aims.ereefs.netcdf.aggregator.operators.factory;
 
 import aims.ereefs.netcdf.aggregator.operators.pipeline.*;
 
-import java.util.ArrayList;
-
 /**
  * Concrete implementation of the {@link PipelineFactory} for instantiating a {@link Pipeline} to
  * compare a variable from two inputs for each cell.
@@ -31,16 +29,9 @@ public class DifferenceOperatorFactory extends AbstractOperatorFactory {
     @Override
     public Pipeline make() {
         final DifferenceCollectorStage differenceCollectorStage = new DifferenceCollectorStage();
-        final SubtractTransformerStage subtractTransformerStage = new SubtractTransformerStage(
-                new ArrayList<Stage>() {{
-                    add(differenceCollectorStage);
-                }}
-        );
-        return new CombiningPipeline(
-                subtractTransformerStage,
-                new ArrayList<Collector>() {{
-                    add(differenceCollectorStage);
-                }}
+        return new BasicPipeline(
+                differenceCollectorStage,
+                differenceCollectorStage
         );
     }
 }
