@@ -32,25 +32,37 @@ public class NcAggregateTaskGenerator {
 
     static public List<NcAggregateTask.TimeInstant> makeTimeInstants(String inputId,
                                                                      Map<Double, Map<String, Integer>> timeInstantToInputMetadataIdToEndIndexMap) {
+        return NcAggregateTaskGenerator.makeTimeInstants(
+                new String[]{inputId},
+                timeInstantToInputMetadataIdToEndIndexMap
+        );
+    }
+
+    static public List<NcAggregateTask.TimeInstant> makeTimeInstants(String[] inputIds,
+                                                                     Map<Double, Map<String, Integer>> timeInstantToInputMetadataIdToEndIndexMap) {
         final List<NcAggregateTask.TimeInstant> timeInstants = new ArrayList<>();
         for (double timeInstantValue : timeInstantToInputMetadataIdToEndIndexMap.keySet()) {
             final Map<String, Integer> inputMetadataIdToEndIndexMap = timeInstantToInputMetadataIdToEndIndexMap.get(timeInstantValue);
-            final List<NcAggregateTask.FileIndexBounds> fileIndexBounds = new ArrayList<>();
-            for (final String metadataId : inputMetadataIdToEndIndexMap.keySet()) {
-                int endIndex = inputMetadataIdToEndIndexMap.get(metadataId);
-                fileIndexBounds.add(new NcAggregateTask.FileIndexBounds(metadataId, 0, endIndex));
-            }
+            
             timeInstants.add(
                 new NcAggregateTask.TimeInstant(
                     timeInstantValue,
                     new ArrayList<NcAggregateTask.Input>() {
                         {
-                            add(
-                                new NcAggregateTask.Input(
-                                    inputId,
-                                    fileIndexBounds
-                                )
-                            );
+                            for (String inputId : inputIds) {
+                                final List<NcAggregateTask.FileIndexBounds> fileIndexBounds = new ArrayList<>();
+                                for (final String metadataId : inputMetadataIdToEndIndexMap.keySet().stream().filter(metadataId -> metadataId.startsWith(inputId + "/")).toArray(String[]::new)) {
+                                    int endIndex = inputMetadataIdToEndIndexMap.get(metadataId);
+                                    fileIndexBounds.add(new NcAggregateTask.FileIndexBounds(metadataId, 0, endIndex));
+                                }
+                                
+                                add(
+                                        new NcAggregateTask.Input(
+                                                inputId,
+                                                fileIndexBounds
+                                        )
+                                );
+                            }
                         }
                     }
                 )

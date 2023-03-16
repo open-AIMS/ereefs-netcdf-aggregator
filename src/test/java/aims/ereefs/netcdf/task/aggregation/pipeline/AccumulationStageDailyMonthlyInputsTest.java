@@ -16,10 +16,7 @@ import ucar.ma2.Array;
 
 import java.io.File;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.DoubleStream;
 
 /**
@@ -41,26 +38,26 @@ public class AccumulationStageDailyMonthlyInputsTest extends AbstractAccumulatio
     @Test
     public void execute_tempTimeMonthlyAggregation_valid() {
 
-        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, this.cachePath);
+        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, cachePath);
         this.populateTestExecutor(
-            this.inputPath,
-            this.metadataDao,
-            testExecutor
+                inputPath,
+                metadataDao,
+                testExecutor
         );
         final List<List<Array>> actualResultsByDepthGroupList =
-            testExecutor.execute("temp_since_start");
+                testExecutor.execute("temp_since_start");
 
         // Calculate the expected result.
         final double EXPECTED_RESULT =
-            DoubleStream.iterate(0, i -> i + 1)
-                .limit(31)
-                .average()
-                .orElse(0.0);
+                DoubleStream.iterate(0, i -> i + 1)
+                        .limit(31)
+                        .average()
+                        .orElse(0.0);
 
         // Validate the actual results against the expected results.
         TestUtils.validateResults(
-            actualResultsByDepthGroupList,
-            TestUtils.buildResultSetFromSingleValue(EXPECTED_RESULT)
+                actualResultsByDepthGroupList,
+                TestUtils.buildResultSetFromSingleValue(EXPECTED_RESULT)
         );
 
     }
@@ -71,11 +68,11 @@ public class AccumulationStageDailyMonthlyInputsTest extends AbstractAccumulatio
     @Test
     public void execute_tempDepthMonthlyAggregation_valid() {
 
-        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, this.cachePath);
+        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, cachePath);
         this.populateTestExecutor(
-            this.inputPath,
-            this.metadataDao,
-            testExecutor
+                inputPath,
+                metadataDao,
+                testExecutor
         );
         final List<List<Array>> actualResultsByDepthGroupList = testExecutor.execute("temp_depth");
 
@@ -98,8 +95,36 @@ public class AccumulationStageDailyMonthlyInputsTest extends AbstractAccumulatio
 
         // Validate the actual results against the expected results.
         TestUtils.validateResults(
-            actualResultsByDepthGroupList,
-            expectedResultsByDepthGroup
+                actualResultsByDepthGroupList,
+                expectedResultsByDepthGroup
+        );
+
+    }
+    
+    /**
+     * Verify the calculation of the {@code Diff} using the {@code temp_hour} variable in multiple inputs.
+     */
+    @Test
+    public void execute_tempTimeMonthlyAggregationMultipleInputs_valid() {
+        String operator = "DIFF";
+
+        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, cachePath, operator);
+        this.populateTestExecutorWithMultipleInputs(
+                inputPath,
+                metadataDao,
+                testExecutor,
+                new String[]{INPUT_ID, INPUT_ID + "_2"},
+                operator
+        );
+        final List<List<Array>> actualResultsByDepthGroupList = testExecutor.execute(NetcdfFileGenerator.TEMPERATURE_TIME_INCREMENTS_SINCE_START_VARIABLE_NAME);
+
+        // Expected result is 0 as both files should have the same data
+        final double EXPECTED_RESULT = 0.0;
+        
+        // Validate the actual results against the expected results.
+        TestUtils.validateResults(
+                actualResultsByDepthGroupList,
+                TestUtils.buildResultSetFromSingleValue(EXPECTED_RESULT)
         );
 
     }
@@ -110,11 +135,10 @@ public class AccumulationStageDailyMonthlyInputsTest extends AbstractAccumulatio
      * for executing tests.
      */
     protected void populateTestExecutor(
-        File inputPath,
-        MetadataDao metadataDao,
-        TestExecutor testExecutor
+            File inputPath,
+            MetadataDao metadataDao,
+            TestExecutor testExecutor
     ) {
-
         final String DATASET_ID = "january";
 
         // Generate the input files and their corresponding Metadata, and store the Metadata in
@@ -122,18 +146,18 @@ public class AccumulationStageDailyMonthlyInputsTest extends AbstractAccumulatio
         final File[] inputDatasetFiles = new File[1];
         try {
             File inputDatasetFile = NetcdfFileGenerator.generateDailyMonthly(
-                inputPath,
-                false,
-                LATS,
-                LONS,
-                DEPTHS
+                    inputPath,
+                    false,
+                    LATS,
+                    LONS,
+                    DEPTHS
             );
             NetCDFMetadataBean netCDFMetadataBean = NetCDFMetadataBean.create(
-                PRODUCT_ID,
-                DATASET_ID,
-                new URI("file:" + inputDatasetFile.getAbsolutePath()),
-                inputDatasetFile,
-                DateTime.now().getMillis()
+                    INPUT_ID,
+                    DATASET_ID,
+                    new URI("file:" + inputDatasetFile.getAbsolutePath()),
+                    inputDatasetFile,
+                    DateTime.now().getMillis()
             );
             metadataDao.persist(netCDFMetadataBean.toJSON());
             inputDatasetFiles[0] = inputDatasetFile;
@@ -142,47 +166,131 @@ public class AccumulationStageDailyMonthlyInputsTest extends AbstractAccumulatio
         }
 
         NcAggregateProductDefinition productDefinition = NcAggregateProductDefinition.make(
-            PRODUCT_ID,
-            "Australia/Brisbane",
-            new ProductDefinition.Filters(new ProductDefinition.DateRange[0]),
-            new NcAggregateProductDefinition.NetCDFInput[]{
-                NcAggregateProductDefinitionGenerator.makeDailyMonthlyInput(
-                    INPUT_ID,
-                    NetcdfFileGenerator.VARIABLE_NAMES
-                )
-            },
-            new ArrayList<NcAggregateProductDefinition.PreProcessingTaskDefn>(),
-            NcAggregateProductDefinitionGenerator.makeAggregationAction(
-                AGGREGATION_PERIOD,
-                NetcdfFileGenerator.VARIABLE_NAMES,
-                DEPTHS
-            ),
-            NcAggregateProductDefinitionGenerator.makeMonthlyOutputs()
+                PRODUCT_ID,
+                "Australia/Brisbane",
+                new ProductDefinition.Filters(new ProductDefinition.DateRange[0]),
+                new NcAggregateProductDefinition.NetCDFInput[]{
+                        NcAggregateProductDefinitionGenerator.makeDailyMonthlyInput(
+                                INPUT_ID,
+                                NetcdfFileGenerator.VARIABLE_NAMES
+                        )
+                },
+                new ArrayList<>(),
+                NcAggregateProductDefinitionGenerator.makeAggregationAction(
+                        AGGREGATION_PERIOD,
+                        NetcdfFileGenerator.VARIABLE_NAMES,
+                        DEPTHS
+                ),
+                NcAggregateProductDefinitionGenerator.makeMonthlyOutputs()
         );
 
         // Define a Task to perform the generation of a single output file.
         final NcAggregateTask task = NcAggregateTaskGenerator.generate(
-            PRODUCT_ID,
-            NcAggregateTaskGenerator.makeTimeInstants(
-                INPUT_ID,
-                new HashMap<Double, Map<String, Integer>>() {{
-                    put(
-                        1.0,
-                        new HashMap<String, Integer>() {{
-                            put(PRODUCT_ID + "/" + DATASET_ID, 30); // 31 days in January.
+                PRODUCT_ID,
+                NcAggregateTaskGenerator.makeTimeInstants(
+                        INPUT_ID,
+                        new HashMap<Double, Map<String, Integer>>() {{
+                            put(
+                                    1.0,
+                                    new HashMap<String, Integer>() {{
+                                        put(INPUT_ID + "/" + DATASET_ID, 30); // 31 days in January.
+                                    }}
+                            );
                         }}
-                    );
-                }}
-            )
+                )
         );
 
         testExecutor.populate(
-            inputDatasetFiles,
-            productDefinition,
-            task,
-            metadataDao
+                inputDatasetFiles,
+                productDefinition,
+                task,
+                metadataDao
         );
-
     }
 
+    protected void populateTestExecutorWithMultipleInputs(
+            File inputPath,
+            MetadataDao metadataDao,
+            TestExecutor testExecutor,
+            String[] inputIds,
+            String operatorName
+    ) {
+        final String DATASET_ID = "january";
+
+        // Generate the input files and their corresponding Metadata, and store the Metadata in
+        // the database.
+        final File[] inputDatasetFiles = new File[inputIds.length];
+        NcAggregateProductDefinition.NetCDFInput[] netCDFInputs = new NcAggregateProductDefinition.NetCDFInput[inputIds.length];
+        for (int i = 0; i < inputIds.length; i++) {
+            try {
+                File inputDatasetFile = NetcdfFileGenerator.generateDailyMonthly(
+                        inputPath,
+                        false,
+                        LATS,
+                        LONS,
+                        DEPTHS
+                );
+                NetCDFMetadataBean netCDFMetadataBean = NetCDFMetadataBean.create(
+                        inputIds[i],
+                        DATASET_ID,
+                        new URI("file:" + inputDatasetFile.getAbsolutePath()),
+                        inputDatasetFile,
+                        DateTime.now().getMillis()
+                );
+                metadataDao.persist(netCDFMetadataBean.toJSON());
+                inputDatasetFiles[i] = inputDatasetFile;
+
+                netCDFInputs[i] = NcAggregateProductDefinitionGenerator.makeDailyMonthlyInput(
+                        inputIds[i],
+                        NetcdfFileGenerator.VARIABLE_NAMES
+                );
+
+            } catch (Exception e) {
+                Assertions.fail(e.getMessage());
+            }
+        }
+
+        NcAggregateProductDefinition productDefinition = NcAggregateProductDefinition.make(
+                PRODUCT_ID,
+                "Australia/Brisbane",
+                new ProductDefinition.Filters(new ProductDefinition.DateRange[0]),
+                netCDFInputs,
+                new ArrayList<>(),
+                NcAggregateProductDefinitionGenerator.makeSpecificAggregationAction(
+                        AGGREGATION_PERIOD,
+                        Arrays.stream(inputIds).map(inputId -> inputId + "::" + NetcdfFileGenerator.TEMPERATURE_TIME_INCREMENTS_SINCE_START_VARIABLE_NAME).toArray(String[]::new),
+                        DEPTHS,
+                        operatorName,
+                        new String[]{
+                                NetcdfFileGenerator.TEMPERATURE_TIME_INCREMENTS_SINCE_START_VARIABLE_NAME + "_diff"
+                        }
+                ),
+                NcAggregateProductDefinitionGenerator.makeMonthlyOutputs()
+        );
+
+        // Define a Task to perform the generation of a single output file.
+        final NcAggregateTask task = NcAggregateTaskGenerator.generate(
+                PRODUCT_ID,
+                NcAggregateTaskGenerator.makeTimeInstants(
+                        inputIds,
+                        new HashMap<Double, Map<String, Integer>>() {{
+                            put(
+                                    1.0,
+                                    new HashMap<String, Integer>() {{
+                                        for (String inputId : inputIds) {
+                                            put(inputId + "/" + DATASET_ID, 30); // 31 days in January.
+                                        }
+                                    }}
+                            );
+                        }}
+                )
+        );
+
+        testExecutor.populate(
+                inputDatasetFiles,
+                productDefinition,
+                task,
+                metadataDao
+        );
+    }
 }
