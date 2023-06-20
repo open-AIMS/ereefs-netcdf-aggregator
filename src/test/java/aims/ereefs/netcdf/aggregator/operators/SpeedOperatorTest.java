@@ -20,20 +20,10 @@ import java.util.List;
 public class SpeedOperatorTest {
 
     /**
-     * Constant value representing the date/time of "2016-03-01T00:00".
-     */
-    final static public double BASE_TIME = 9556.0;
-
-    /**
-     * Threshold to use for all tests.
-     */
-    private double threshold = 5.0;
-
-    /**
      * Valid test data for the U variable consisting of multiple time slices for a 2 x 2 grid with
      * a height of 2.
      */
-    private List<Double[]> uTestData = Arrays.asList(
+    private final List<Double[]> uTestData = Arrays.asList(
         new Double[]{  // Time slice 1
             Double.NaN, -1.0, // z = 1
             -1.0, 1.0,
@@ -68,7 +58,7 @@ public class SpeedOperatorTest {
      * Valid test data for the V variable consisting of multiple time slices for a 2 x 2 grid with
      * a height of 2.
      */
-    private List<Double[]> vTestData = Arrays.asList(
+    private final List<Double[]> vTestData = Arrays.asList(
         new Double[]{  // Time slice 1
             Double.NaN, -1.0, // z = 1
             -1.0, 1.0,
@@ -108,24 +98,24 @@ public class SpeedOperatorTest {
         // Declare the result.
         Double[] expectedMinimum = new Double[]{  // results
             Double.NaN, 1.0,    // z = 1
-            1.33, 1.41,
+            1.334, 1.414,
 
-            2.24, 2.24,   // z = 2
-            2.0, 2.24
+            2.236, 2.236,   // z = 2
+            2.0, 2.236
         };
         Double[] expectedMean = new Double[]{  // results
-            Double.NaN, 1.38,   // z = 1
-            1.57, 2.01,
+            Double.NaN, 1.379,   // z = 1
+            1.571, 2.013,
 
-            1.78, 1.76,   // z = 2
-            1.73, 1.86
+            1.776, 1.755,   // z = 2
+            1.73, 1.863
         };
         Double[] expectedMaximum = new Double[]{  // results
-            Double.NaN, 3.10,   // z = 1
-            3.54, 3.54,
+            Double.NaN, 3.102,   // z = 1
+            3.536, 3.536,
 
-            2.43, 2.55,   // z = 2
-            2.55, 2.67
+            2.433, 2.55,   // z = 2
+            2.55, 2.668
         };
 
         // Instantiate the Pipelines.
@@ -140,12 +130,12 @@ public class SpeedOperatorTest {
         combinedTestData.add(this.vTestData);
 
         // Build the list of results.
-        List<Double[]> expectedSpeedResults = new ArrayList(3) {{
+        List<Double[]> expectedSpeedResults = new ArrayList<Double[]>(3) {{
             add(expectedMinimum);
             add(expectedMean);
             add(expectedMaximum);
         }};
-        List<Double[]> expectedSpeedMeanResults = new ArrayList(3) {{
+        List<Double[]> expectedSpeedMeanResults = new ArrayList<Double[]>(3) {{
             add(expectedMean);
         }};
 

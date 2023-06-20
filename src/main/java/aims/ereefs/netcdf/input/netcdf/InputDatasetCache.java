@@ -148,7 +148,7 @@ public class InputDatasetCache {
      */
     public InputDataset getReferenceDataset(String inputId) {
         final List<String> metadataIds = this.datasetMetadataIdsByInputIdMap.get(inputId);
-        if (metadataIds.size() > 0) {
+        if (metadataIds != null && metadataIds.size() > 0) {
             return this.retrieve(metadataIds.get(0));
         } else {
             return null;

@@ -57,6 +57,7 @@ abstract public class AbstractAccumulationStageTest {
      */
     static protected String PRODUCT_ID = "test__product";
     static protected String INPUT_ID = "singleInputId";
+    static protected String OPERATOR = "mean";
 
     /**
      * Prepare the test environment and create the input files.
@@ -99,7 +100,7 @@ abstract public class AbstractAccumulationStageTest {
      * {@link #populate(File[], NcAggregateProductDefinition, NcAggregateTask, MetadataDao)}
      * populated before invoking {@link #execute(String) execute}.
      */
-    protected class TestExecutor {
+    protected static class TestExecutor {
 
         /**
          * The period over which aggregation is being performed.
@@ -140,11 +141,22 @@ abstract public class AbstractAccumulationStageTest {
          * The {@link InputDatasetCache} for requesting access to the {@link #inputDatasetFiles}.
          */
         protected InputDatasetCache inputDatasetCache;
+        
+        protected String operator;
 
         public TestExecutor(AggregationPeriods aggregationPeriod,
                             File cachePath) {
             this.aggregationPeriod = aggregationPeriod;
             this.cachePath = cachePath;
+            this.operator = OPERATOR;
+        }
+
+        public TestExecutor(AggregationPeriods aggregationPeriod,
+                            File cachePath,
+                            String operator) {
+            this.aggregationPeriod = aggregationPeriod;
+            this.cachePath = cachePath;
+            this.operator = operator;
         }
 
         /**
@@ -206,16 +218,14 @@ abstract public class AbstractAccumulationStageTest {
             pipelineContext.setTimeInstant(timeInstant);
 
             // There should be only a single Input in the TimeInstant.
-            pipelineContext.setInput(timeInstant.getInputs().get(0));
+            pipelineContext.setInputs(timeInstant.getInputs());
 
-            // Choose the SummaryOperator for MEAN temp_hour.
+            // Choose the SummaryOperator for MEAN or DIFF temp_hour.
             final NcAggregateProductDefinition.SummaryOperator summaryOperator =
                 this.summaryOperatorDefinitionList.stream()
-                    .filter(defn -> {
-                        return defn.getOperatorType().equalsIgnoreCase("mean") &&
-                            defn.getInputVariables().size() == 1 &&
-                            defn.getInputVariables().get(0).endsWith(variableName);
-                    })
+                    .filter(defn -> defn.getOperatorType().equalsIgnoreCase(this.operator) &&
+                        defn.getInputVariables().size() > 0 &&
+                        defn.getInputVariables().get(0).endsWith(variableName))
                     .findFirst()
                     .orElse(null);
             Assertions.assertThat(summaryOperator).isNotNull();

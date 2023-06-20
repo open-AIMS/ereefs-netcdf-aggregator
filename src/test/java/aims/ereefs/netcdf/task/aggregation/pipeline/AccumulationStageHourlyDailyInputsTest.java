@@ -41,26 +41,26 @@ public class AccumulationStageHourlyDailyInputsTest extends AbstractAccumulation
     @Test
     public void execute_tempTimeDailyAggregation_valid() {
 
-        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, this.cachePath);
+        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, cachePath);
         this.populateTestExecutor(
-            this.inputPath,
-            this.metadataDao,
-            testExecutor
+                inputPath,
+                metadataDao,
+                testExecutor
         );
         final List<List<Array>> actualResultsByDepthGroupList =
-            testExecutor.execute("temp_since_start");
+                testExecutor.execute("temp_since_start");
 
         // Calculate the expected result.
         final double EXPECTED_RESULT =
-            DoubleStream.iterate(0, i -> i + 1)
-                .limit(24)
-                .average()
-                .orElse(0.0);
+                DoubleStream.iterate(0, i -> i + 1)
+                        .limit(24)
+                        .average()
+                        .orElse(0.0);
 
         // Validate the actual results against the expected results.
         TestUtils.validateResults(
-            actualResultsByDepthGroupList,
-            TestUtils.buildResultSetFromSingleValue(EXPECTED_RESULT)
+                actualResultsByDepthGroupList,
+                TestUtils.buildResultSetFromSingleValue(EXPECTED_RESULT)
         );
 
     }
@@ -71,11 +71,11 @@ public class AccumulationStageHourlyDailyInputsTest extends AbstractAccumulation
     @Test
     public void execute_tempDepthDailyAggregation_valid() {
 
-        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, this.cachePath);
+        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, cachePath);
         this.populateTestExecutor(
-            this.inputPath,
-            this.metadataDao,
-            testExecutor
+                inputPath,
+                metadataDao,
+                testExecutor
         );
         final List<List<Array>> actualResultsByDepthGroupList = testExecutor.execute("temp_depth");
 
@@ -98,8 +98,8 @@ public class AccumulationStageHourlyDailyInputsTest extends AbstractAccumulation
 
         // Validate the actual results against the expected results.
         TestUtils.validateResults(
-            actualResultsByDepthGroupList,
-            expectedResultsByDepthGroup
+                actualResultsByDepthGroupList,
+                expectedResultsByDepthGroup
         );
 
     }
@@ -110,9 +110,9 @@ public class AccumulationStageHourlyDailyInputsTest extends AbstractAccumulation
      * for executing tests.
      */
     protected void populateTestExecutor(
-        File inputPath,
-        MetadataDao metadataDao,
-        TestExecutor testExecutor
+            File inputPath,
+            MetadataDao metadataDao,
+            TestExecutor testExecutor
     ) {
 
         final String DATASET_ID = "day__1";
@@ -122,18 +122,18 @@ public class AccumulationStageHourlyDailyInputsTest extends AbstractAccumulation
         final File[] inputDatasetFiles = new File[1];
         try {
             File inputDatasetFile = NetcdfFileGenerator.generateHourlyDaily(
-                inputPath,
-                false,
-                LATS,
-                LONS,
-                DEPTHS
+                    inputPath,
+                    false,
+                    LATS,
+                    LONS,
+                    DEPTHS
             );
             NetCDFMetadataBean netCDFMetadataBean = NetCDFMetadataBean.create(
-                PRODUCT_ID,
-                DATASET_ID,
-                new URI("file:" + inputDatasetFile.getAbsolutePath()),
-                inputDatasetFile,
-                DateTime.now().getMillis()
+                    INPUT_ID,
+                    DATASET_ID,
+                    new URI("file:" + inputDatasetFile.getAbsolutePath()),
+                    inputDatasetFile,
+                    DateTime.now().getMillis()
             );
             metadataDao.persist(netCDFMetadataBean.toJSON());
             inputDatasetFiles[0] = inputDatasetFile;
@@ -142,45 +142,45 @@ public class AccumulationStageHourlyDailyInputsTest extends AbstractAccumulation
         }
 
         NcAggregateProductDefinition productDefinition = NcAggregateProductDefinition.make(
-            PRODUCT_ID,
-            "Australia/Brisbane",
-            new ProductDefinition.Filters(new ProductDefinition.DateRange[0]),
-            new NcAggregateProductDefinition.NetCDFInput[]{
-                NcAggregateProductDefinitionGenerator.makeHourlyDailyInput(
-                    INPUT_ID,
-                    NetcdfFileGenerator.VARIABLE_NAMES
-                )
-            },
-            new ArrayList<NcAggregateProductDefinition.PreProcessingTaskDefn>(),
-            NcAggregateProductDefinitionGenerator.makeAggregationAction(
-                AGGREGATION_PERIOD,
-                NetcdfFileGenerator.VARIABLE_NAMES,
-                DEPTHS
-            ),
-            NcAggregateProductDefinitionGenerator.makeDailyOutputs()
+                PRODUCT_ID,
+                "Australia/Brisbane",
+                new ProductDefinition.Filters(new ProductDefinition.DateRange[0]),
+                new NcAggregateProductDefinition.NetCDFInput[]{
+                        NcAggregateProductDefinitionGenerator.makeHourlyDailyInput(
+                                INPUT_ID,
+                                NetcdfFileGenerator.VARIABLE_NAMES
+                        )
+                },
+                new ArrayList<>(),
+                NcAggregateProductDefinitionGenerator.makeAggregationAction(
+                        AGGREGATION_PERIOD,
+                        NetcdfFileGenerator.VARIABLE_NAMES,
+                        DEPTHS
+                ),
+                NcAggregateProductDefinitionGenerator.makeDailyOutputs()
         );
 
         // Define a Task to perform the generation of a single output file.
         final NcAggregateTask task = NcAggregateTaskGenerator.generate(
-            PRODUCT_ID,
-            NcAggregateTaskGenerator.makeTimeInstants(
-                INPUT_ID,
-                new HashMap<Double, Map<String, Integer>>() {{
-                    put(
-                        1.0,
-                        new HashMap<String, Integer>() {{
-                            put(PRODUCT_ID + "/" + DATASET_ID, 23);  // 24 hours in a day.
+                PRODUCT_ID,
+                NcAggregateTaskGenerator.makeTimeInstants(
+                        INPUT_ID,
+                        new HashMap<Double, Map<String, Integer>>() {{
+                            put(
+                                    1.0,
+                                    new HashMap<String, Integer>() {{
+                                        put(INPUT_ID + "/" + DATASET_ID, 23);  // 24 hours in a day.
+                                    }}
+                            );
                         }}
-                    );
-                }}
-            )
+                )
         );
 
         testExecutor.populate(
-            inputDatasetFiles,
-            productDefinition,
-            task,
-            metadataDao
+                inputDatasetFiles,
+                productDefinition,
+                task,
+                metadataDao
         );
 
     }
