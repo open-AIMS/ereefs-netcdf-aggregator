@@ -39,39 +39,39 @@ public class AccumulationStageMonthlyMonthlyInputsTest extends AbstractAccumulat
     @Test
     public void execute_tempSinceEpochAnnualAggregation_valid() {
 
-        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, this.cachePath);
+        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, cachePath);
         this.populateTestExecutor(
-            this.inputPath,
-            this.metadataDao,
-            testExecutor
+                inputPath,
+                metadataDao,
+                testExecutor
         );
         final List<List<Array>> actualResultsByDepthGroupList =
-            testExecutor.execute("temp_since_epoch");
+                testExecutor.execute("temp_since_epoch");
 
         // Calculate the expected result.
         DateTime epoch = new DateTime(1990, 1, 1, 0, 0, DateTimeZone.UTC);
         DateTime startDate = NetcdfFileGenerator.DEFAULT_START_DATE;
         int monthsSinceEpoch = Months.monthsBetween(epoch, startDate).getMonths();
         double EXPECTED_RESULT =
-            (
-                (monthsSinceEpoch) * 31             // Jan
-                    + (monthsSinceEpoch + 1) * 28   // Feb
-                    + (monthsSinceEpoch + 2) * 31   // Mar
-                    + (monthsSinceEpoch + 3) * 30   // Apr
-                    + (monthsSinceEpoch + 4) * 31   // May
-                    + (monthsSinceEpoch + 5) * 30   // June
-                    + (monthsSinceEpoch + 6) * 31   // July
-                    + (monthsSinceEpoch + 7) * 31   // Aug
-                    + (monthsSinceEpoch + 8) * 30   // Sept
-                    + (monthsSinceEpoch + 9) * 31   // Oct
-                    + (monthsSinceEpoch + 10) * 30  // Nov
-                    + (monthsSinceEpoch + 11) * 31  // Dec
-            ) / 365.0;
+                (
+                        (monthsSinceEpoch) * 31             // Jan
+                                + (monthsSinceEpoch + 1) * 28   // Feb
+                                + (monthsSinceEpoch + 2) * 31   // Mar
+                                + (monthsSinceEpoch + 3) * 30   // Apr
+                                + (monthsSinceEpoch + 4) * 31   // May
+                                + (monthsSinceEpoch + 5) * 30   // June
+                                + (monthsSinceEpoch + 6) * 31   // July
+                                + (monthsSinceEpoch + 7) * 31   // Aug
+                                + (monthsSinceEpoch + 8) * 30   // Sept
+                                + (monthsSinceEpoch + 9) * 31   // Oct
+                                + (monthsSinceEpoch + 10) * 30  // Nov
+                                + (monthsSinceEpoch + 11) * 31  // Dec
+                ) / 365.0;
 
         // Validate the actual results against the expected results.
         TestUtils.validateResults(
-            actualResultsByDepthGroupList,
-            TestUtils.buildResultSetFromSingleValue(EXPECTED_RESULT)
+                actualResultsByDepthGroupList,
+                TestUtils.buildResultSetFromSingleValue(EXPECTED_RESULT)
         );
 
     }
@@ -82,11 +82,11 @@ public class AccumulationStageMonthlyMonthlyInputsTest extends AbstractAccumulat
     @Test
     public void execute_tempDepthAnnualAggregation_valid() {
 
-        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, this.cachePath);
+        final TestExecutor testExecutor = new TestExecutor(AGGREGATION_PERIOD, cachePath);
         this.populateTestExecutor(
-            this.inputPath,
-            this.metadataDao,
-            testExecutor
+                inputPath,
+                metadataDao,
+                testExecutor
         );
         final List<List<Array>> actualResultsByDepthGroupList = testExecutor.execute("temp_depth");
 
@@ -109,8 +109,8 @@ public class AccumulationStageMonthlyMonthlyInputsTest extends AbstractAccumulat
 
         // Validate the actual results against the expected results.
         TestUtils.validateResults(
-            actualResultsByDepthGroupList,
-            expectedResultsByDepthGroup
+                actualResultsByDepthGroupList,
+                expectedResultsByDepthGroup
         );
 
     }
@@ -121,9 +121,9 @@ public class AccumulationStageMonthlyMonthlyInputsTest extends AbstractAccumulat
      * for executing tests.
      */
     protected void populateTestExecutor(
-        File inputPath,
-        MetadataDao metadataDao,
-        TestExecutor testExecutor
+            File inputPath,
+            MetadataDao metadataDao,
+            TestExecutor testExecutor
     ) {
 
         // Generate the input files and their corresponding Metadata, and store the Metadata in
@@ -135,20 +135,20 @@ public class AccumulationStageMonthlyMonthlyInputsTest extends AbstractAccumulat
         try {
             for (int monthIndex = 0; monthIndex < maxMonths; monthIndex++) {
                 File inputDatasetFile = NetcdfFileGenerator.generateMonthlyMonthly(
-                    inputPath,
-                    false,
-                    startDate.plusMonths(monthIndex),
-                    LATS,
-                    LONS,
-                    DEPTHS
+                        inputPath,
+                        false,
+                        startDate.plusMonths(monthIndex),
+                        LATS,
+                        LONS,
+                        DEPTHS
                 );
                 final String tempKey = "0" + monthIndex;
                 NetCDFMetadataBean netCDFMetadataBean = NetCDFMetadataBean.create(
-                    PRODUCT_ID,
-                    "month" + tempKey.substring(tempKey.length() - 2),
-                    new URI("file:" + inputDatasetFile.getAbsolutePath()),
-                    inputDatasetFile,
-                    DateTime.now().getMillis()
+                        INPUT_ID,
+                        "month" + tempKey.substring(tempKey.length() - 2),
+                        new URI("file:" + inputDatasetFile.getAbsolutePath()),
+                        inputDatasetFile,
+                        DateTime.now().getMillis()
                 );
                 metadataDao.persist(netCDFMetadataBean.toJSON());
                 inputDatasetFiles[monthIndex] = inputDatasetFile;
@@ -159,56 +159,55 @@ public class AccumulationStageMonthlyMonthlyInputsTest extends AbstractAccumulat
         }
 
         NcAggregateProductDefinition productDefinition = NcAggregateProductDefinition.make(
-            PRODUCT_ID,
-            "Australia/Brisbane",
-            new ProductDefinition.Filters(new ProductDefinition.DateRange[0]),
-            new NcAggregateProductDefinition.NetCDFInput[]{
-                NcAggregateProductDefinitionGenerator.makeMonthlyMonthlyInput(
-                    INPUT_ID,
-                    NetcdfFileGenerator.VARIABLE_NAMES
-                )
-            },
-            new ArrayList<NcAggregateProductDefinition.PreProcessingTaskDefn>(),
-            NcAggregateProductDefinitionGenerator.makeAggregationAction(
-                AGGREGATION_PERIOD,
-                NetcdfFileGenerator.VARIABLE_NAMES,
-                DEPTHS
-            ),
-            NcAggregateProductDefinitionGenerator.makeAnnualOutputs()
+                PRODUCT_ID,
+                "Australia/Brisbane",
+                new ProductDefinition.Filters(new ProductDefinition.DateRange[0]),
+                new NcAggregateProductDefinition.NetCDFInput[]{
+                        NcAggregateProductDefinitionGenerator.makeMonthlyMonthlyInput(
+                                INPUT_ID,
+                                NetcdfFileGenerator.VARIABLE_NAMES
+                        )
+                },
+                new ArrayList<>(),
+                NcAggregateProductDefinitionGenerator.makeAggregationAction(
+                        AGGREGATION_PERIOD,
+                        NetcdfFileGenerator.VARIABLE_NAMES,
+                        DEPTHS
+                ),
+                NcAggregateProductDefinitionGenerator.makeAnnualOutputs()
         );
 
         // Define a Task to perform the generation of a single output file.
         final NcAggregateTask task = NcAggregateTaskGenerator.generate(
-            PRODUCT_ID,
-            NcAggregateTaskGenerator.makeTimeInstants(
-                INPUT_ID,
-                new HashMap<Double, Map<String, Integer>>() {{
-                    put(
-                        1.0,
-                        new TreeMap<String, Integer>() {{
-                            for (int index = 0; index < netCDFMetadataBeans.length; index++) {
-                                NetCDFMetadataBean netCDFMetadataBean = netCDFMetadataBeans[index];
-                                put(
-                                    netCDFMetadataBean.getId(),
-                                    netCDFMetadataBean
-                                        .getVariableMetadataBeanMap()
-                                        .get("temp_depth") // Choose a variable that has temporal data.
-                                        .getTemporalDomainBean()
-                                        .getTimeValues()
-                                        .size() - 1   // zero-based.
-                                );
-                            }
+                PRODUCT_ID,
+                NcAggregateTaskGenerator.makeTimeInstants(
+                        INPUT_ID,
+                        new HashMap<Double, Map<String, Integer>>() {{
+                            put(
+                                    1.0,
+                                    new TreeMap<String, Integer>() {{
+                                        for (NetCDFMetadataBean netCDFMetadataBean : netCDFMetadataBeans) {
+                                            put(
+                                                    netCDFMetadataBean.getId(),
+                                                    netCDFMetadataBean
+                                                            .getVariableMetadataBeanMap()
+                                                            .get("temp_depth") // Choose a variable that has temporal data.
+                                                            .getTemporalDomainBean()
+                                                            .getTimeValues()
+                                                            .size() - 1   // zero-based.
+                                            );
+                                        }
+                                    }}
+                            );
                         }}
-                    );
-                }}
-            )
+                )
         );
 
         testExecutor.populate(
-            inputDatasetFiles,
-            productDefinition,
-            task,
-            metadataDao
+                inputDatasetFiles,
+                productDefinition,
+                task,
+                metadataDao
         );
 
     }
