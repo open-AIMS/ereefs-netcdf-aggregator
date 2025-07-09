@@ -29,6 +29,8 @@ import au.gov.aims.ereefs.pojo.task.NcAggregateTask;
 import au.gov.aims.ereefs.pojo.task.Task;
 import au.gov.aims.ereefs.pojo.task.TaskDaoFileImpl;
 import au.gov.aims.ereefs.pojo.task.TaskDaoMongoDbImpl;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -41,6 +43,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Builder class responsible for instantiating an {@link ApplicationContext} and any references it
@@ -53,6 +56,8 @@ public class ApplicationContextBuilder {
     static protected Logger logger = LoggerFactory.getLogger(ApplicationContextBuilder.class);
 
     static final protected int DEFAULT_MAX_FILE_CACHE_SIZE_GB = 40;
+
+    private static final int MONGODB_TIMEOUT = 300; // 5 minutes
 
     /**
      * Build the {@link ApplicationContext} from environment parameters.
@@ -268,14 +273,24 @@ public class ApplicationContextBuilder {
         }
 
         // Connect to the MongoDB instance.
-        MongoClient mongoClient = null;
+        MongoClient mongoClient;
         try {
-            mongoClient =
-                MongoClients.create("mongodb://" + userId + ":" + URLEncoder.encode(password, "UTF-8") + "@" +
-                    host + ":" + port);
+            MongoClientSettings settings = MongoClientSettings.builder()
+                .applyConnectionString(new ConnectionString("mongodb://" + userId + ":" +
+                        URLEncoder.encode(password, "UTF-8") + "@" + host + ":" + port))
+                .retryWrites(true)
+                .applyToSocketSettings(builder ->
+                        builder.connectTimeout(MONGODB_TIMEOUT, TimeUnit.SECONDS)
+                                .readTimeout(MONGODB_TIMEOUT, TimeUnit.SECONDS))
+                .applyToClusterSettings(builder ->
+                        builder.serverSelectionTimeout(MONGODB_TIMEOUT, TimeUnit.SECONDS))
+                .build();
+
+            mongoClient = MongoClients.create(settings);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Failed to connect to MongoDB.", e);
         }
+
         applicationContext.setMongoClient(mongoClient);
         MongoDatabase mongoDatabase = mongoClient.getDatabase(db);
 

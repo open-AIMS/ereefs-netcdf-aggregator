@@ -29,3 +29,4 @@ target/
 
 ## App-specific .gitignore settings.
 env/dev/set-env.sh
+.env

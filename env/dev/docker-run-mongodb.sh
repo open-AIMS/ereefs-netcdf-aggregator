@@ -21,21 +21,16 @@ if [[ -z $TASK_ID ]]; then
   exit 1
 fi
 
-docker container prune --force
+docker rm ereefs-ncaggregate
 
 docker run \
     -u $(id -u):$(id -g) \
     --name "ereefs-ncaggregate" \
     --memory=7.5GB \
     --network ereefs-network \
-    -v /data/ereefs/files/:/data/ereefs/files/ \
+    -v ./data/:/data/ereefs/files/ \
     -v /tmp/ereefs-netcdf-aggregator/:/tmp/ereefs-netcdf-aggregator/ \
     --env TASK_ID=${TASK_ID} \
     --env EXECUTION_ENVIRONMENT=test \
-    --env MONGODB_HOST=mongodb \
-    --env MONGODB_PORT=27017 \
-    --env MONGODB_DB=ereefs \
-    --env MONGODB_USER_ID=ncaggregate \
-    --env MONGODB_PASSWORD=ncaggregate \
-    --env PROMETHEUS_PUSH_GATEWAY_URL=http://pushgateway:9091 \
+    --env-file ./env/dev/.env \
     ereefs-ncaggregate
