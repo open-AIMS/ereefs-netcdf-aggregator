@@ -11,8 +11,6 @@ SCRIPT_PATH=$(dirname "${SCRIPT}")
 SCRIPT_NAME=`basename "$0"`
 PROJECT_ROOT=$(readlink --canonicalize "${SCRIPT_PATH}/../..")
 
-docker container prune --force
-
 docker run \
     -u $(id -u):$(id -g) \
     --name "ereefs-ncaggregate" \

@@ -21,8 +21,6 @@ if [[ -z $TASK_ID ]]; then
   exit 1
 fi
 
-docker container prune --force
-
 docker run \
     -u $(id -u):$(id -g) \
     --name "ereefs-ncaggregate" \
