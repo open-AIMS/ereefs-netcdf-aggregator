@@ -1,12 +1,8 @@
-#
-# This works, please don't change.
-
-# Dockerfile for the container that runs the packaged eReefs Job Planner.
-FROM openjdk:8-slim
+# Dockerfile for the container that runs the packaged eReefs NetCDF Aggregator (ncaggregator).
+FROM eclipse-temurin:8-jre-jammy
 
 # Install required libraries.
 RUN apt-get update && apt-get install -y libnetcdf-c++4
-#RUN apt-get update && apt-get install -y libnetcdf-dev
 
 # Set the work directory.
 WORKDIR /opt/app/bin
